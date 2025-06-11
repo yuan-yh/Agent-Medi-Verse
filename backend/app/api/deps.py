@@ -13,20 +13,21 @@ from app.core.config import settings
 from app.core.db import engine
 from app.models import TokenPayload, User
 
+# 从请求头 (Authorization: Bearer <token>) 提取 JWT Token
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
 
-
+# 为每个请求创建独立的数据库会话，请求结束后自动关闭
 def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
 
-
+# 路由守卫
 SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
-
+# 基础守卫: 解码 JWT Token -> 查询数据库验证用户
 def get_current_user(session: SessionDep, token: TokenDep) -> User:
     try:
         payload = jwt.decode(
@@ -48,7 +49,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
-
+# 高级守卫：检查超级用户权限
 def get_current_active_superuser(current_user: CurrentUser) -> User:
     if not current_user.is_superuser:
         raise HTTPException(

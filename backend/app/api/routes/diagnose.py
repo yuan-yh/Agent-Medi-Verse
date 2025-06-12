@@ -9,12 +9,12 @@ from app.models import Diagnose, ChatMessage, User
 
 router = APIRouter(prefix="/diagnose", tags=["diagnose"])
 
-# 请求体结构
+# Request Format
 class DiagnoseRequest(BaseModel):
     input_text: str
 
 
-# 返回结构
+# Response Format
 class DiagnosePublic(BaseModel):
     id: UUID
     agent_selected: str
